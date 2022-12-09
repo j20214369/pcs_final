@@ -1,4 +1,5 @@
-from flask import Flask, request, redirect
+import mimetypes
+from flask import Flask, request, redirect, Response
 from twilio.twiml.messaging_response import MessagingResponse
 import numpy as np
 import time
@@ -27,11 +28,13 @@ def sms_reply():
     body = request.values.get('Body', None)
     resp = MessagingResponse()
     print(body)
-    if body == 'Start':
+    global simulation
+
+    if body == 'Sim':
         start.value = True
         
         resp.message("The program start!")
-    elif body == 'Stop':
+    elif body == 'Pause':
         start.value = False
         simulation.terminate()
         simulation = Process(target=sim, args=(start,log,) )
@@ -42,12 +45,13 @@ def sms_reply():
         resp.message(log.value)
     else:
         resp.message("Parameter has been set!")
-    return str(resp)
-
+    return Response(str(resp), mimetype="application/xml")
+    
 
 
 if __name__ == "__main__":
-    
+    global first
+    first = True
     manager = Manager()
     global start
     start = manager.Value('flag',True)
@@ -55,6 +59,7 @@ if __name__ == "__main__":
     global log
     log = manager2.Value(c_char_p,'test')
     global simulation
+    global temp
     simulation = Process(target=sim, args=(start,log,) )
     print('start')
     simulation.start()
